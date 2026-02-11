@@ -1,9 +1,9 @@
 # Implementation Plan v3.0
 ## Code Review Fixes: Accuracy, Bugs & Test Coverage
 
-**Version:** 3.0  
-**Date:** February 11, 2026  
-**Status:** Planned  
+**Version:** 3.0
+**Date:** February 11, 2026
+**Status:** Planned
 **Origin:** Full code review identifying accuracy bugs, calculator issues, and test gaps
 
 ---
@@ -115,9 +115,9 @@ Phase 8 (comparison/registry gaps) ── independent
 Phase 9 (cosmetic) ── independent, do last
 ```
 
-**Phases 1 & 2** must be done first (bug fixes that later tests validate).  
-**Phase 3** is the highest-value test addition (covers the default code path).  
-**Phases 4-8** are independent and can be done in any order.  
+**Phases 1 & 2** must be done first (bug fixes that later tests validate).
+**Phase 3** is the highest-value test addition (covers the default code path).
+**Phases 4-8** are independent and can be done in any order.
 **Phase 9** is cleanup — do last.
 
 ---
