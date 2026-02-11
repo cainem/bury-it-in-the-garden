@@ -313,8 +313,10 @@ function calculateSummary(pensionAmount, initialWithdrawal, goldPurchase, yearly
   const totalValueRealized = totalWithdrawn + finalValue;
 
   // Years where full withdrawal was achieved
+  // When inflation adjustment is on, actual withdrawals grow each year,
+  // so we just check status === 'active' (which implies full withdrawal was met)
   const fullWithdrawalYears = yearlyResults.filter(
-    r => r.status === 'active' && Math.abs(r.netWithdrawal - targetWithdrawal) < 1
+    r => r.status === 'active'
   ).length;
 
   return {

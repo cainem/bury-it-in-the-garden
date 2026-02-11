@@ -48,6 +48,7 @@ const STRATEGY_TO_INDEX = {
   sp500: INDEX_TYPES.SP500,
   nasdaq100: INDEX_TYPES.NASDAQ100,
   ftse100: INDEX_TYPES.FTSE100,
+  goldEtf: INDEX_TYPES.GOLD_ETF,
   usTreasury: INDEX_TYPES.US_TREASURY
 };
 
@@ -96,6 +97,7 @@ function extractYearlyData(strategyWrapper) {
         year: year.year,
         startValue: year.startValueGbp,
         withdrawal: year.netWithdrawal,
+        grossWithdrawal: year.withdrawalGross,
         endValue: year.endValueGbp,
         status: year.status,
         raw: year
@@ -106,6 +108,7 @@ function extractYearlyData(strategyWrapper) {
         year: year.year,
         startValue: year.startValueGbp,
         withdrawal: year.netWithdrawal,
+        grossWithdrawal: year.grossWithdrawal,
         endValue: year.endValueGbp,
         status: year.status,
         raw: year
@@ -144,6 +147,7 @@ function mergeYearlyResults(yearlyA, yearlyB) {
       strategyA: a.raw,
       strategyB: b.raw,
       combinedStartValue: a.startValue + b.startValue,
+      combinedGrossWithdrawal: (a.grossWithdrawal || 0) + (b.grossWithdrawal || 0),
       combinedWithdrawal: a.withdrawal + b.withdrawal,
       combinedEndValue: a.endValue + b.endValue,
       statusA: a.status,

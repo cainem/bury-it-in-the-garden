@@ -118,7 +118,7 @@ function extractNormalizedYearlyData(strategyWrapper) {
       year: year.year,
       startValue: year.combinedStartValue,
       endValue: year.combinedEndValue,
-      grossWithdrawal: year.combinedWithdrawal, // Net for combined
+      grossWithdrawal: year.combinedGrossWithdrawal || year.combinedWithdrawal,
       netWithdrawal: year.combinedWithdrawal,
       taxPaid: 0, // Tax already factored into combined withdrawals
       fees: 0, // Fees already factored in

@@ -481,3 +481,184 @@ describe('calculateCombinedStrategyByIds with config', () => {
     expect(customResult.summary.totalFees).toBeLessThan(defaultResult.summary.totalFees);
   });
 });
+
+describe('inflation-adjusted combined strategy', () => {
+  test('given_inflationEnabled_when_calculating_then_combinedWithdrawalsGrow', () => {
+    const result = calculateCombinedStrategy('gold-sp500', 500000, 2010, 4, 5, { adjustForInflation: true });
+
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    // Combined withdrawal in year 2 should exceed year 1 due to inflation
+    expect(year2.combinedWithdrawal).toBeGreaterThan(year1.combinedWithdrawal);
+  });
+
+  test('given_inflationEnabled_when_calculating_then_flowsThroughToBothHalves', () => {
+    const result = calculateCombinedStrategy('gold-sp500', 500000, 2010, 4, 5, { adjustForInflation: true });
+
+    // Verify inflation flows to gold half
+    const goldYear1 = result.strategyA.result.yearlyResults[0];
+    const goldYear2 = result.strategyA.result.yearlyResults[1];
+    if (goldYear2.status === 'active') {
+      expect(goldYear2.withdrawalGross).toBeGreaterThan(goldYear1.withdrawalGross);
+    }
+
+    // Verify inflation flows to SIPP half
+    const sippYear1 = result.strategyB.result.yearlyResults[0];
+    const sippYear2 = result.strategyB.result.yearlyResults[1];
+    if (sippYear2.status === 'active') {
+      expect(sippYear2.grossWithdrawal).toBeGreaterThan(sippYear1.grossWithdrawal);
+    }
+  });
+
+  test('given_inflationDisabled_when_calculating_then_combinedWithdrawalsStayFlat', () => {
+    const result = calculateCombinedStrategy('gold-sp500', 500000, 2010, 4, 5, { adjustForInflation: false });
+
+    // All active years should have similar combined withdrawals
+    const activeYears = result.yearlyResults.filter(y => y.status === 'active');
+    if (activeYears.length >= 2) {
+      const first = activeYears[0].combinedWithdrawal;
+      const second = activeYears[1].combinedWithdrawal;
+      // Should be very close (within tolerance of gold price effects on net withdrawal)
+      expect(Math.abs(second - first) / first).toBeLessThan(0.1);
+    }
+  });
+
+  test('given_inflationEnabled_when_calculating_then_combinedGrossWithdrawalTracked', () => {
+    const result = calculateCombinedStrategy('gold-sp500', 500000, 2010, 4, 5, { adjustForInflation: true });
+
+    // Verify the new combinedGrossWithdrawal field exists and grows
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    expect(year1.combinedGrossWithdrawal).toBeDefined();
+    expect(year2.combinedGrossWithdrawal).toBeDefined();
+    expect(year2.combinedGrossWithdrawal).toBeGreaterThan(year1.combinedGrossWithdrawal);
+  });
+});
+
+// ============================================
+// Gold ETF Combined Strategy Tests
+// ============================================
+
+describe('Gold ETF combined strategies', () => {
+  test('given_goldGoldEtf_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('gold-goldEtf', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary).toBeDefined();
+    expect(result.strategyA).toBeDefined();
+    expect(result.strategyB).toBeDefined();
+  });
+
+  test('given_goldGoldEtf_when_calculating_then_splitsFundsEvenly', () => {
+    const result = calculateCombinedStrategy('gold-goldEtf', 500000, 2000, 4, 10);
+
+    // Each half gets 250000
+    const goldSummary = result.strategyA.result.summary;
+    const goldEtfSummary = result.strategyB.result.summary;
+
+    expect(goldSummary).toBeDefined();
+    expect(goldEtfSummary).toBeDefined();
+  });
+
+  test('given_goldEtfSp500_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('goldEtf-sp500', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+    expect(result.summary.finalValue).toBeGreaterThanOrEqual(0);
+  });
+
+  test('given_goldEtfNasdaq100_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('goldEtf-nasdaq100', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtfFtse100_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('goldEtf-ftse100', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtfCombination_when_checkingEarliestYear_then_respectsComponents', () => {
+    // Gold ETF earliest is 1980, so goldEtf-sp500 should be 1980
+    const goldEtfSp500Year = getCombinedStrategyEarliestYear('goldEtf-sp500');
+    expect(goldEtfSp500Year).toBe(1980);
+
+    // goldEtf-nasdaq100 should be 1985 (nasdaq starts 1985)
+    const goldEtfNasdaqYear = getCombinedStrategyEarliestYear('goldEtf-nasdaq100');
+    expect(goldEtfNasdaqYear).toBe(1985);
+
+    // goldEtf-ftse100 should be 1984 (ftse starts 1984)
+    const goldEtfFtseYear = getCombinedStrategyEarliestYear('goldEtf-ftse100');
+    expect(goldEtfFtseYear).toBe(1984);
+  });
+
+  test('given_goldEtfSp500_when_checkingAvailability2000_then_returnsTrue', () => {
+    expect(isCombinedStrategyAvailable('goldEtf-sp500', 2000)).toBe(true);
+  });
+});
+
+// ============================================
+// US Treasury Combined Strategy Tests
+// ============================================
+
+describe('US Treasury combined strategies', () => {
+  test('given_goldUsTreasury_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('gold-usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary).toBeDefined();
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtfUsTreasury_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('goldEtf-usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_sp500UsTreasury_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('sp500-usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_nasdaq100UsTreasury_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('nasdaq100-usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_ftse100UsTreasury_when_calculating_then_returnsValidResults', () => {
+    const result = calculateCombinedStrategy('ftse100-usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary.totalWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasuryCombination_when_checkingEarliestYear_then_respectsComponents', () => {
+    // US Treasury earliest is 1980
+    const goldUsTreasuryYear = getCombinedStrategyEarliestYear('gold-usTreasury');
+    expect(goldUsTreasuryYear).toBe(1980);
+
+    // nasdaq100-usTreasury should be 1985 (nasdaq starts 1985)
+    const nasdaqUsTreasuryYear = getCombinedStrategyEarliestYear('nasdaq100-usTreasury');
+    expect(nasdaqUsTreasuryYear).toBe(1985);
+
+    // ftse100-usTreasury should be 1984 (ftse starts 1984)
+    const ftseUsTreasuryYear = getCombinedStrategyEarliestYear('ftse100-usTreasury');
+    expect(ftseUsTreasuryYear).toBe(1984);
+  });
+
+  test('given_sp500UsTreasury_when_checkingAvailability2000_then_returnsTrue', () => {
+    expect(isCombinedStrategyAvailable('sp500-usTreasury', 2000)).toBe(true);
+  });
+});

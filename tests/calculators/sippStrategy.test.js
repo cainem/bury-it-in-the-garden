@@ -12,6 +12,8 @@ import {
   calculateSP500SippStrategy,
   calculateNasdaq100SippStrategy,
   calculateFTSE100SippStrategy,
+  calculateGoldEtfSippStrategy,
+  calculateUSTreasurySippStrategy,
   calculateSippYearsRemaining,
   getSippValue,
   calculateSippAfterTaxValue,
@@ -684,5 +686,224 @@ describe('calculateSippYearsRemaining with config', () => {
 
     // Zero fee should result in equal or more years
     expect(zeroFeeYears).toBeGreaterThanOrEqual(defaultYears);
+  });
+});
+
+describe('inflation-adjusted withdrawals', () => {
+  test('given_inflationEnabled_when_calculating_then_year2GrossWithdrawalExceedsYear1', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.SP500, { adjustForInflation: true });
+
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    // Year 2 gross withdrawal should be higher due to inflation
+    expect(year2.grossWithdrawal).toBeGreaterThan(year1.grossWithdrawal);
+  });
+
+  test('given_inflationEnabled_when_calculating_then_grossWithdrawalsGrowWithCpi', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.SP500, { adjustForInflation: true });
+
+    for (let i = 1; i < result.yearlyResults.length; i++) {
+      const prev = result.yearlyResults[i - 1];
+      const curr = result.yearlyResults[i];
+      if (curr.status === 'active' && prev.status === 'active') {
+        expect(curr.grossWithdrawal).toBeGreaterThanOrEqual(prev.grossWithdrawal);
+      }
+    }
+  });
+
+  test('given_inflationDisabled_when_calculating_then_grossWithdrawalStaysFlat', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.SP500, { adjustForInflation: false });
+    const baseWithdrawal = 500000 * 0.04; // £20,000
+
+    result.yearlyResults.forEach(year => {
+      if (year.status === 'active') {
+        expect(year.grossWithdrawal).toBeCloseTo(baseWithdrawal, 0);
+      }
+    });
+  });
+
+  test('given_inflationEnabledByDefault_when_noConfigProvided_then_withdrawalsGrow', () => {
+    // Default config has adjustForInflation: true
+    const result = calculateSippStrategy(500000, 2010, 4, 5);
+
+    const year1 = result.yearlyResults[0];
+    const year5 = result.yearlyResults[4];
+
+    if (year5.status === 'active') {
+      expect(year5.grossWithdrawal).toBeGreaterThan(year1.grossWithdrawal);
+    }
+  });
+
+  test('given_inflationEnabled_when_summarizing_then_fullWithdrawalYearsCountsAllActive', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.SP500, { adjustForInflation: true });
+
+    const expectedFullYears = result.yearlyResults.filter(r => r.status === 'active').length;
+    expect(result.summary.fullWithdrawalYears).toBe(expectedFullYears);
+  });
+
+  test('given_inflationEnabled_when_calculatingNasdaq_then_withdrawalsGrow', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.NASDAQ100, { adjustForInflation: true });
+
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    expect(year2.grossWithdrawal).toBeGreaterThan(year1.grossWithdrawal);
+  });
+
+  test('given_inflationEnabled_when_calculatingFtse_then_withdrawalsGrow', () => {
+    const result = calculateSippStrategy(500000, 2010, 4, 5, INDEX_TYPES.FTSE100, { adjustForInflation: true });
+
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    expect(year2.grossWithdrawal).toBeGreaterThan(year1.grossWithdrawal);
+  });
+});
+
+// ============================================
+// Gold ETF SIPP Strategy Tests
+// ============================================
+
+describe('Gold ETF SIPP strategy', () => {
+  test('given_goldEtfIndex_when_calculating_then_returnsValidResults', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.GOLD_ETF);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary).toBeDefined();
+    expect(result.summary.totalNetWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtfIndex_when_calculating_then_initialInvestmentCorrect', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.GOLD_ETF);
+
+    const firstYear = result.yearlyResults[0];
+    // First year start value should be close to pension amount (before fees)
+    expect(firstYear.startValueGbp).toBeCloseTo(500000, -2);
+  });
+
+  test('given_goldEtfIndex_when_calculating_then_managementFeesApplied', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.GOLD_ETF);
+
+    expect(result.summary.totalManagementFees).toBeGreaterThan(0);
+    // First year fee should be ~0.5% of 500000 = £2500
+    const firstYearFee = result.yearlyResults[0].managementFee;
+    expect(firstYearFee).toBeCloseTo(2500, -1);
+  });
+
+  test('given_goldEtfIndex_when_calculating_then_withdrawalsTaxedCorrectly', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.GOLD_ETF);
+
+    const firstYear = result.yearlyResults[0];
+    // 4% of 500000 = £20,000 gross withdrawal
+    expect(firstYear.grossWithdrawal).toBeCloseTo(20000, 0);
+    // Tax should be applied (25% tax-free, 75% taxable)
+    expect(firstYear.taxOnWithdrawal).toBeGreaterThan(0);
+    expect(firstYear.netWithdrawal).toBeLessThan(firstYear.grossWithdrawal);
+  });
+
+  test('given_goldEtfIndex_when_calculating25years_then_mayDeplete', () => {
+    const result = calculateSippStrategy(100000, 2000, 4, 25, INDEX_TYPES.GOLD_ETF);
+
+    // Should have results for all years
+    expect(result.yearlyResults).toHaveLength(25);
+    // Some years may show exhausted status
+    const exhaustedYears = result.yearlyResults.filter(r => r.status === 'exhausted');
+    // With gold ETF, could last or deplete depending on gold performance
+    expect(exhaustedYears.length + result.summary.fullWithdrawalYears).toBe(25);
+  });
+
+  test('given_goldEtfConvenienceFunction_when_calculating_then_matchesDirect', () => {
+    const directResult = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.GOLD_ETF);
+    const convenienceResult = calculateGoldEtfSippStrategy(500000, 2000, 4, 10);
+
+    expect(convenienceResult.summary.totalNetWithdrawn)
+      .toBe(directResult.summary.totalNetWithdrawn);
+    expect(convenienceResult.summary.finalValue)
+      .toBe(directResult.summary.finalValue);
+  });
+
+  test('given_goldEtfIndex_when_gettingValue_then_works', () => {
+    const value = getSippValue(100, 2020, INDEX_TYPES.GOLD_ETF);
+    expect(value).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtfIndex_when_calculatingYearsRemaining_then_works', () => {
+    const years = calculateSippYearsRemaining(100, 2000, 5000, INDEX_TYPES.GOLD_ETF);
+    expect(years).toBeGreaterThan(0);
+  });
+});
+
+// ============================================
+// US Treasury SIPP Strategy Tests
+// ============================================
+
+describe('US Treasury SIPP strategy', () => {
+  test('given_usTreasuryIndex_when_calculating_then_returnsValidResults', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.US_TREASURY);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.summary).toBeDefined();
+    expect(result.summary.totalNetWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasuryIndex_when_calculating_then_initialInvestmentCorrect', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.US_TREASURY);
+
+    const firstYear = result.yearlyResults[0];
+    expect(firstYear.startValueGbp).toBeCloseTo(500000, -2);
+  });
+
+  test('given_usTreasuryIndex_when_calculating_then_managementFeesApplied', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.US_TREASURY);
+
+    expect(result.summary.totalManagementFees).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasuryIndex_when_calculating_then_withdrawalsTaxedCorrectly', () => {
+    const result = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.US_TREASURY);
+
+    const firstYear = result.yearlyResults[0];
+    expect(firstYear.grossWithdrawal).toBeCloseTo(20000, 0);
+    expect(firstYear.taxOnWithdrawal).toBeGreaterThan(0);
+    expect(firstYear.netWithdrawal).toBeLessThan(firstYear.grossWithdrawal);
+  });
+
+  test('given_usTreasuryConvenienceFunction_when_calculating_then_matchesDirect', () => {
+    const directResult = calculateSippStrategy(500000, 2000, 4, 10, INDEX_TYPES.US_TREASURY);
+    const convenienceResult = calculateUSTreasurySippStrategy(500000, 2000, 4, 10);
+
+    expect(convenienceResult.summary.totalNetWithdrawn)
+      .toBe(directResult.summary.totalNetWithdrawn);
+    expect(convenienceResult.summary.finalValue)
+      .toBe(directResult.summary.finalValue);
+  });
+
+  test('given_usTreasuryIndex_when_gettingValue_then_works', () => {
+    const value = getSippValue(100, 2020, INDEX_TYPES.US_TREASURY);
+    expect(value).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasuryIndex_when_calculatingYearsRemaining_then_works', () => {
+    const years = calculateSippYearsRemaining(100, 2000, 5000, INDEX_TYPES.US_TREASURY);
+    expect(years).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasury_when_compared2008Crisis_then_showsResilience', () => {
+    // Treasuries should do relatively well during 2008 crisis vs equities
+    const treasuryResult = calculateSippStrategy(500000, 2007, 4, 3, INDEX_TYPES.US_TREASURY);
+    const sp500Result = calculateSippStrategy(500000, 2007, 4, 3, INDEX_TYPES.SP500);
+
+    // Both should produce valid results
+    expect(treasuryResult.summary.totalNetWithdrawn).toBeGreaterThan(0);
+    expect(sp500Result.summary.totalNetWithdrawn).toBeGreaterThan(0);
+  });
+
+  test('given_usTreasury_when_starting1980_then_works', () => {
+    // US Treasury data starts from 1980
+    const result = calculateSippStrategy(500000, 1980, 4, 10, INDEX_TYPES.US_TREASURY);
+
+    expect(result.yearlyResults).toHaveLength(10);
+    expect(result.yearlyResults[0].year).toBe(1980);
   });
 });

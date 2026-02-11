@@ -705,3 +705,121 @@ describe('multi-index integration', () => {
     expect(ftseEndValue).toBeLessThan(sp500EndValue);
   });
 });
+
+// ============================================
+// Gold ETF Synthetic Pricing Tests
+// ============================================
+
+describe('getSyntheticPrice Gold ETF', () => {
+  test('given_goldEtf_when_gettingPrice2019_then_equalsBasePrice', () => {
+    const price = getSyntheticPrice(2019, INDEX_TYPES.GOLD_ETF);
+    expect(price).toBeCloseTo(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].basePriceGbp, 2);
+  });
+
+  test('given_goldEtf_when_gettingPrice1980_then_works', () => {
+    const price = getSyntheticPrice(1980, INDEX_TYPES.GOLD_ETF);
+    expect(price).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtf_when_gettingHistoricalPrices_then_allPositive', () => {
+    const prices = getAllPrices(INDEX_TYPES.GOLD_ETF);
+    for (const year in prices) {
+      expect(prices[year]).toBeGreaterThan(0);
+    }
+  });
+
+  test('given_goldEtf_when_gettingAllPrices_then_startsAt1980', () => {
+    const prices = getAllPrices(INDEX_TYPES.GOLD_ETF);
+    expect(prices[1980]).toBeDefined();
+    expect(prices[1979]).toBeUndefined();
+  });
+
+  test('given_goldEtfConfig_when_checking_then_noCurrencyConversion', () => {
+    expect(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].requiresCurrencyConversion).toBe(false);
+    expect(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].currency).toBe('GBP');
+  });
+
+  test('given_goldEtfConfig_when_checking_then_hasCorrectBaseYear', () => {
+    expect(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].baseYear).toBe(2019);
+    expect(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].basePriceGbp).toBeCloseTo(99.70, 2);
+  });
+
+  test('given_goldEtfConfig_when_checking_then_hasCorrectEarliestYear', () => {
+    expect(INDEX_CONFIG[INDEX_TYPES.GOLD_ETF].earliestYear).toBe(1980);
+  });
+
+  test('given_goldEtf_when_calculatingUnits_then_works', () => {
+    const units = calculateUnits(10000, 2020, INDEX_TYPES.GOLD_ETF);
+    expect(units).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtf_when_calculatingValue_then_works', () => {
+    const value = calculateValue(100, 2020, INDEX_TYPES.GOLD_ETF);
+    expect(value).toBeGreaterThan(0);
+  });
+
+  test('given_goldEtf_when_calculatingReturn_then_works', () => {
+    const returnVal = calculateReturn(2000, 2020, INDEX_TYPES.GOLD_ETF);
+    expect(returnVal).toBeGreaterThan(1); // Gold grew over 20 years
+  });
+
+  test('given_goldEtf_when_calculatingAnnualizedReturn_then_reasonable', () => {
+    const annualized = calculateAnnualizedReturn(2000, 2020, INDEX_TYPES.GOLD_ETF);
+    expect(annualized).toBeGreaterThan(0);
+    expect(annualized).toBeLessThan(0.30);
+  });
+});
+
+describe('validatePrices Gold ETF and US Treasury', () => {
+  test('given_goldEtf_when_validating_then_returnsTrue', () => {
+    expect(validatePrices(INDEX_TYPES.GOLD_ETF)).toBe(true);
+  });
+
+  test('given_usTreasury_when_validating_then_returnsTrue', () => {
+    expect(validatePrices(INDEX_TYPES.US_TREASURY)).toBe(true);
+  });
+});
+
+describe('isDataAvailable Gold ETF and US Treasury', () => {
+  test('given_goldEtf1980_when_checking_then_returnsTrue', () => {
+    expect(isDataAvailable(INDEX_TYPES.GOLD_ETF, 1980)).toBe(true);
+  });
+
+  test('given_goldEtf1979_when_checking_then_returnsFalse', () => {
+    expect(isDataAvailable(INDEX_TYPES.GOLD_ETF, 1979)).toBe(false);
+  });
+
+  test('given_usTreasury1980_when_checking_then_returnsTrue', () => {
+    expect(isDataAvailable(INDEX_TYPES.US_TREASURY, 1980)).toBe(true);
+  });
+
+  test('given_usTreasury1979_when_checking_then_returnsFalse', () => {
+    expect(isDataAvailable(INDEX_TYPES.US_TREASURY, 1979)).toBe(false);
+  });
+});
+
+describe('getEarliestYear Gold ETF and US Treasury', () => {
+  test('given_goldEtf_when_gettingEarliestYear_then_returns1980', () => {
+    expect(getEarliestYear(INDEX_TYPES.GOLD_ETF)).toBe(1980);
+  });
+
+  test('given_usTreasury_when_gettingEarliestYear_then_returns1980', () => {
+    expect(getEarliestYear(INDEX_TYPES.US_TREASURY)).toBe(1980);
+  });
+});
+
+describe('getIndexConfig Gold ETF and US Treasury', () => {
+  test('given_goldEtf_when_gettingConfig_then_returnsCorrectConfig', () => {
+    const config = getIndexConfig(INDEX_TYPES.GOLD_ETF);
+    expect(config.name).toBe('Gold ETF');
+    expect(config.baseYear).toBe(2019);
+    expect(config.basePriceGbp).toBeCloseTo(99.70, 2);
+  });
+
+  test('given_usTreasury_when_gettingConfig_then_returnsCorrectConfig', () => {
+    const config = getIndexConfig(INDEX_TYPES.US_TREASURY);
+    expect(config.name).toBe('US Long Treasury');
+    expect(config.baseYear).toBe(2019);
+    expect(config.basePriceGbp).toBeCloseTo(115.00, 2);
+  });
+});

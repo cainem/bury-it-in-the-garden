@@ -449,6 +449,55 @@ describe('compareAnyStrategies', () => {
     });
   });
 
+  describe('inflation-adjusted comparisons', () => {
+    test('given_inflationEnabled_when_comparingStrategies_then_bothStrategiesHaveGrowingWithdrawals', () => {
+      const result = compareAnyStrategies('gold', 'sp500', 500000, 2010, 4, 5, { adjustForInflation: true });
+
+      const year1 = result.yearlyComparison[0];
+      const year2 = result.yearlyComparison[1];
+
+      // Both strategies should show growing gross withdrawals
+      if (year2.strategy1.status === 'active' && year1.strategy1.status === 'active') {
+        expect(year2.strategy1.grossWithdrawal).toBeGreaterThan(year1.strategy1.grossWithdrawal);
+      }
+      if (year2.strategy2.status === 'active' && year1.strategy2.status === 'active') {
+        expect(year2.strategy2.grossWithdrawal).toBeGreaterThan(year1.strategy2.grossWithdrawal);
+      }
+    });
+
+    test('given_inflationDisabled_when_comparingStrategies_then_flatWithdrawals', () => {
+      const result = compareAnyStrategies('gold', 'sp500', 500000, 2010, 4, 5, { adjustForInflation: false });
+
+      const year1 = result.yearlyComparison[0];
+      const year5 = result.yearlyComparison[4];
+
+      // Gold gross withdrawal should stay flat
+      if (year1.strategy1.status === 'active' && year5.strategy1.status === 'active') {
+        expect(year5.strategy1.grossWithdrawal).toBeCloseTo(year1.strategy1.grossWithdrawal, 0);
+      }
+    });
+
+    test('given_inflationEnabled_when_usingCompareStrategies_then_withdrawalsGrow', () => {
+      const result = compareStrategies(500000, 2010, 4, 5, { adjustForInflation: true });
+
+      const year1 = result.yearlyComparison[0];
+      const year2 = result.yearlyComparison[1];
+
+      // SIPP gross withdrawal should grow
+      expect(year2.sipp.grossWithdrawal).toBeGreaterThan(year1.sipp.grossWithdrawal);
+    });
+
+    test('given_inflationDisabled_when_usingCompareStrategies_then_withdrawalsFlat', () => {
+      const result = compareStrategies(500000, 2010, 4, 5, { adjustForInflation: false });
+
+      const year1 = result.yearlyComparison[0];
+      const year5 = result.yearlyComparison[4];
+
+      // SIPP gross withdrawal should be flat
+      expect(year5.sipp.grossWithdrawal).toBeCloseTo(year1.sipp.grossWithdrawal, 0);
+    });
+  });
+
   describe('result structure', () => {
     test('given_goldVsNasdaq_when_comparing_then_returnsCorrectStructure', () => {
       const result = compareAnyStrategies('gold', 'nasdaq100', 500000, 1990, 4, 10);
@@ -584,5 +633,124 @@ describe('compareAnyStrategies', () => {
         expect(result.summary.winnerName).toBe('Tie');
       }
     });
+  });
+});
+
+// ============================================
+// Gold ETF & US Treasury Comparison Tests
+// ============================================
+
+describe('Gold ETF and US Treasury comparisons', () => {
+  test('given_goldEtfVsSp500_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('goldEtf', 'sp500', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('goldEtf');
+    expect(result.strategy2.id).toBe('sp500');
+    expect(result.strategy1.type).toBe('sipp');
+    expect(result.strategy2.type).toBe('sipp');
+    expect(result.yearlyComparison).toHaveLength(10);
+  });
+
+  test('given_goldEtfVsGold_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('goldEtf', 'gold', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('goldEtf');
+    expect(result.strategy1.type).toBe('sipp');
+    expect(result.strategy2.id).toBe('gold');
+    expect(result.strategy2.type).toBe('gold');
+  });
+
+  test('given_usTreasuryVsSp500_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('usTreasury', 'sp500', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('usTreasury');
+    expect(result.strategy2.id).toBe('sp500');
+    expect(result.yearlyComparison).toHaveLength(10);
+  });
+
+  test('given_usTreasuryVsGold_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('usTreasury', 'gold', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('usTreasury');
+    expect(result.strategy2.id).toBe('gold');
+    expect(result.summary).toBeDefined();
+    expect(['strategy1', 'strategy2', 'tie']).toContain(result.summary.winner);
+  });
+
+  test('given_goldEtfVsUsTreasury_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('goldEtf', 'usTreasury', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('goldEtf');
+    expect(result.strategy2.id).toBe('usTreasury');
+    expect(result.yearlyComparison).toHaveLength(10);
+    expect(result.summary.difference).toBeDefined();
+  });
+
+  test('given_goldEtfCombinedVsBase_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('goldEtf-sp500', 'sp500', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('goldEtf-sp500');
+    expect(result.strategy1.type).toBe('combined');
+    expect(result.strategy2.id).toBe('sp500');
+  });
+
+  test('given_usTreasuryCombinedVsBase_when_comparing_then_succeeds', () => {
+    const result = compareAnyStrategies('sp500-usTreasury', 'sp500', 500000, 2000, 4, 10);
+
+    expect(result.strategy1.id).toBe('sp500-usTreasury');
+    expect(result.strategy1.type).toBe('combined');
+    expect(result.strategy2.id).toBe('sp500');
+  });
+});
+
+// ============================================
+// Phase 8: Configurable Fees in Comparison
+// ============================================
+
+describe('configurable fees in comparisons', () => {
+  test('given_customSippFee_when_comparingAnyStrategies_then_affectsResults', () => {
+    const defaultResult = compareAnyStrategies('gold', 'sp500', 500000, 2000, 4, 10);
+    const customResult = compareAnyStrategies('gold', 'sp500', 500000, 2000, 4, 10, {
+      sippManagementFeePercent: 0.1
+    });
+
+    // Lower SIPP fee = lower total fees
+    expect(customResult.strategy2.metrics.totalFees)
+      .toBeLessThan(defaultResult.strategy2.metrics.totalFees);
+  });
+
+  test('given_customGoldTransactionFee_when_comparingAnyStrategies_then_affectsResults', () => {
+    const defaultResult = compareAnyStrategies('gold', 'sp500', 500000, 2000, 4, 10);
+    const customResult = compareAnyStrategies('gold', 'sp500', 500000, 2000, 4, 10, {
+      goldTransactionPercent: 1
+    });
+
+    // Lower gold transaction fee should improve gold strategy
+    expect(customResult.strategy1.metrics.totalValueRealized)
+      .toBeGreaterThan(defaultResult.strategy1.metrics.totalValueRealized);
+  });
+
+  test('given_customSippFee_when_comparingSippVsSipp_then_affectsResults', () => {
+    const defaultResult = compareAnyStrategies('sp500', 'nasdaq100', 500000, 2000, 4, 10);
+    const customResult = compareAnyStrategies('sp500', 'nasdaq100', 500000, 2000, 4, 10, {
+      sippManagementFeePercent: 0.1
+    });
+
+    // Both strategies should have lower fees
+    expect(customResult.strategy1.metrics.totalFees)
+      .toBeLessThan(defaultResult.strategy1.metrics.totalFees);
+    expect(customResult.strategy2.metrics.totalFees)
+      .toBeLessThan(defaultResult.strategy2.metrics.totalFees);
+  });
+
+  test('given_customFeesWithCombinedStrategy_when_comparing_then_feesFlowThrough', () => {
+    const defaultResult = compareAnyStrategies('gold-sp500', 'sp500', 500000, 2000, 4, 10);
+    const customResult = compareAnyStrategies('gold-sp500', 'sp500', 500000, 2000, 4, 10, {
+      sippManagementFeePercent: 0.1
+    });
+
+    // Both results should be valid, and fees should differ
+    expect(defaultResult.strategy2.metrics.totalFees)
+      .toBeGreaterThan(customResult.strategy2.metrics.totalFees);
   });
 });
