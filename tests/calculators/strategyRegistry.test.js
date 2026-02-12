@@ -2,7 +2,7 @@
  * Strategy Registry Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import {
   STRATEGY_TYPES,
   BASE_STRATEGIES,

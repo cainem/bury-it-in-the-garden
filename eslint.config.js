@@ -7,7 +7,8 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.browser,
-        ...globals.es2021
+        ...globals.es2021,
+        gtag: 'readonly'
       }
     },
     rules: {
