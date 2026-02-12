@@ -519,3 +519,204 @@ describe('getTaxBands', () => {
     expect(bands[1].rate).toBe(0.20);
   });
 });
+
+// ============================================
+// Phase 6: 1980s Tax Regime Tests
+// ============================================
+
+describe('1980s tax regime', () => {
+  test('given_income20000_when_calculatingTaxFor1980_then_applies30PercentBasicRate', () => {
+    // 1980: PA = £1,375, basic rate = 30%, higher rate = 60%
+    const result = calculateIncomeTax(20000, 1980);
+
+    // Taxable = 20000 - 1375 = 18625
+    // All within basic rate band (limit 11250)? No: 18625 > 11250
+    // Basic: 11250 * 0.30 = 3375
+    // Higher: (18625 - 11250) * 0.60 = 7375 * 0.60 = 4425
+    // Total: 3375 + 4425 = 7800
+    expect(result.taxPaid).toBeCloseTo(7800, 0);
+    expect(result.netIncome).toBeCloseTo(12200, 0);
+  });
+
+  test('given_income5000_when_calculatingTaxFor1980_then_onlyBasicRate', () => {
+    // 1980: PA = £1,375, basic rate = 30%
+    const result = calculateIncomeTax(5000, 1980);
+
+    // Taxable = 5000 - 1375 = 3625
+    // All within basic rate band (11250)
+    // Tax: 3625 * 0.30 = 1087.50
+    expect(result.taxPaid).toBeCloseTo(1087.50, 0);
+  });
+
+  test('given_income50000_when_calculatingTaxFor1980_then_applies60PercentHigherRate', () => {
+    // 1980: PA = £1,375, basic = 30% up to 11250, higher = 60%
+    const result = calculateIncomeTax(50000, 1980);
+
+    // Taxable = 48625
+    // Basic: 11250 * 0.30 = 3375
+    // Higher: (48625 - 11250) * 0.60 = 37375 * 0.60 = 22425
+    // Total: 3375 + 22425 = 25800
+    expect(result.taxPaid).toBeCloseTo(25800, 0);
+  });
+
+  test('given_income20000_when_calculatingTaxFor1986_then_applies29PercentBasicRate', () => {
+    // 1986: PA = £2,335, basic rate = 29%, basicRateLimit = 17200, higher = 60%
+    const result = calculateIncomeTax(20000, 1986);
+
+    // Taxable = 20000 - 2335 = 17665
+    // Basic: 17200 * 0.29 = 4988
+    // Higher: (17665 - 17200) * 0.60 = 465 * 0.60 = 279
+    // Total: 4988 + 279 = 5267
+    expect(result.taxPaid).toBeCloseTo(5267, 0);
+  });
+
+  test('given_income30000_when_calculatingTaxFor1988_then_applies25PercentBasicAnd40PercentHigher', () => {
+    // 1988: PA = £2,605, basic = 25% up to 19300, higher = 40% (Lawson reform)
+    const result = calculateIncomeTax(30000, 1988);
+
+    // Taxable = 30000 - 2605 = 27395
+    // Basic: 19300 * 0.25 = 4825
+    // Higher: (27395 - 19300) * 0.40 = 8095 * 0.40 = 3238
+    // Total: 4825 + 3238 = 8063
+    expect(result.taxPaid).toBeCloseTo(8063, 0);
+  });
+
+  test('given_income10000_when_calculatingTaxFor1988_then_onlyBasicAt25Percent', () => {
+    // 1988: PA = £2,605, basic = 25%
+    const result = calculateIncomeTax(10000, 1988);
+
+    // Taxable = 10000 - 2605 = 7395
+    // All within basic rate (19300)
+    // Tax: 7395 * 0.25 = 1848.75
+    expect(result.taxPaid).toBeCloseTo(1848.75, 0);
+  });
+
+  test('given_pensionWithdrawal_when_1980_then_25PercentTaxFreeApplied', () => {
+    // 1980: PA = £1,375, basic = 30%, higher = 60%
+    const result = calculateIncomeTax(20000, 1980, true);
+
+    // 25% tax-free: 5000
+    // Taxable gross: 15000
+    // PA deducted: 15000 - 1375 = 13625
+    // Basic: min(13625, 11250) * 0.30 = 11250 * 0.30 = 3375
+    // Higher: (13625 - 11250) * 0.60 = 2375 * 0.60 = 1425
+    // Total: 3375 + 1425 = 4800
+    expect(result.taxFreeAmount).toBeCloseTo(5000, 0);
+    expect(result.taxPaid).toBeCloseTo(4800, 0);
+  });
+
+  test('given_income30000_when_calculatingTaxFor1997_then_applies23PercentBasicRate', () => {
+    // 1997: PA = £3,765, basic = 23%, limit = 26100, higher = 40%
+    const result = calculateIncomeTax(30000, 1997);
+
+    // Taxable = 30000 - 3765 = 26235
+    // Basic: 26100 * 0.23 = 6003
+    // Higher: (26235 - 26100) * 0.40 = 135 * 0.40 = 54
+    // Total: 6003 + 54 = 6057
+    expect(result.taxPaid).toBeCloseTo(6057, 0);
+  });
+
+  test('given_year1980_when_gettingBands_then_returns30PercentBasicAnd60PercentHigher', () => {
+    const bands = getTaxBands(1980);
+
+    expect(bands).toHaveLength(3); // PA, Basic, Higher (no additional rate)
+    expect(bands[0].rate).toBe(0);
+    expect(bands[1].rate).toBe(0.30);
+    expect(bands[2].rate).toBe(0.60);
+  });
+
+  test('given_year1988_when_gettingBands_then_returns25PercentBasicAnd40PercentHigher', () => {
+    const bands = getTaxBands(1988);
+
+    expect(bands).toHaveLength(3);
+    expect(bands[1].rate).toBe(0.25);
+    expect(bands[2].rate).toBe(0.40);
+  });
+});
+
+// ============================================
+// Phase 7: Tax Calculator Edge Cases
+// ============================================
+
+describe('tax calculator edge cases', () => {
+  test('given_income100001_when_calculatingTaxFor2024_then_taperReducesPersonalAllowance', () => {
+    // £100,001 is £1 over the taper threshold
+    // PA starts at 12570, reduced by £1 for every £2 over £100,000
+    // Reduction = floor(1 / 2) = 0 (only £1 over, so floor is 0)
+    // But at £100,002: reduction = 1
+    const result100001 = calculateIncomeTax(100001, 2024);
+    const result100000 = calculateIncomeTax(100000, 2024);
+
+    // With floor(1/2) = 0, PA stays at 12570 for £100,001
+    // Tax at £100,001 should be £40 more than at £100,000 (40% marginal rate)
+    expect(result100001.taxPaid).toBeGreaterThan(result100000.taxPaid);
+  });
+
+  test('given_income100002_when_calculatingTaxFor2024_then_taperStartsReducingPA', () => {
+    // At £100,002: excess = 2, reduction = floor(2/2) = 1
+    // Effective PA = 12570 - 1 = 12569
+    const result100002 = calculateIncomeTax(100002, 2024);
+    const result100000 = calculateIncomeTax(100000, 2024);
+
+    // The effective ~60% marginal rate in the taper zone
+    // means extra tax increases faster than 40%
+    const extraTax = result100002.taxPaid - result100000.taxPaid;
+    const extraIncome = 2;
+    // Should be more than 40% rate (effective ~60% due to PA taper)
+    expect(extraTax / extraIncome).toBeGreaterThan(0.40);
+  });
+
+  test('given_income500000_when_calculatingTaxFor2024_then_allBandsApplied', () => {
+    // At £500k, PA is fully tapered (income > £125,140)
+    // Effective PA = 0
+    // Taxable = £500,000
+    // Basic: £37,700 * 20% = £7,540
+    // Higher: (£125,140 - 0 - £37,700) * 40% = £87,440 * 40% = £34,976
+    // Additional: (£500,000 - £125,140) * 45% = £374,860 * 45% = £168,687
+    // Total = £7,540 + £34,976 + £168,687 = £211,203
+    const result = calculateIncomeTax(500000, 2024);
+
+    expect(result.taxPaid).toBeCloseTo(211203, 0);
+    expect(result.netIncome).toBeCloseTo(288797, 0);
+  });
+
+  test('given_income125140_when_calculatingTaxFor2024_then_personalAllowanceFullyTapered', () => {
+    // At £125,140, PA should be exactly 0 (tapered by £12,570)
+    // excess over £100,000 = £25,140, reduction = floor(25140/2) = 12570
+    // Effective PA = 12570 - 12570 = 0
+    const result = calculateIncomeTax(125140, 2024);
+
+    // Taxable = £125,140 (0 PA)
+    // Basic: 37700 * 0.20 = 7540
+    // Higher: (125140 - 37700) * 0.40 = 87440 * 0.40 = 34976
+    // Total: 7540 + 34976 = 42516
+    expect(result.taxPaid).toBeCloseTo(42516, 0);
+  });
+
+  test('given_getMarginalTaxRate_when_incomeInTaperZone_then_returns40Percent', () => {
+    // Note: getMarginalTaxRate uses base PA (not tapered) for band calculation
+    // At £110,000, the nominal band says "higher rate" = 40%
+    const rate = getMarginalTaxRate(110000, 2024);
+    expect(rate).toBe(0.40);
+  });
+
+  test('given_income50000_when_calculatingTaxFor2026_then_worksCorrectly', () => {
+    // 2026: PA = £12,570, basic = 20% up to 37700, higher = 40%
+    const result = calculateIncomeTax(50000, 2026);
+
+    // Taxable = 50000 - 12570 = 37430
+    // All within basic rate (37700)
+    // Tax: 37430 * 0.20 = 7486
+    expect(result.taxPaid).toBeCloseTo(7486, 0);
+  });
+
+  test('given_nanInput_when_calculatingTax_then_throwsError', () => {
+    expect(() => calculateIncomeTax(NaN, 2024)).toThrow();
+  });
+
+  test('given_zeroIncome_when_calculatingTax_then_returnsZeroTax', () => {
+    const result = calculateIncomeTax(0, 2024);
+    expect(result.taxPaid).toBe(0);
+    expect(result.netIncome).toBe(0);
+  });
+});

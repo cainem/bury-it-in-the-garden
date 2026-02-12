@@ -71,7 +71,7 @@ describe('calculateGoldStrategy', () => {
       expect(result.initialWithdrawal.taxCalculation.taxFreeAmount).toBe(25000);
     });
 
-    test('given_netProceeds_when_buyingGold_then_applies2PercentCost', () => {
+    test('given_netProceeds_when_buyingGold_then_applies3PercentCost', () => {
       const result = calculateGoldStrategy(100000, 2020, 4, 5);
 
       const netAfterTax = result.initialWithdrawal.netAfterTax;
@@ -474,6 +474,78 @@ describe('calculateGoldYearsRemaining with config', () => {
 
     // Lower storage fee = gold lasts longer
     expect(customYears).toBeGreaterThanOrEqual(defaultYears);
+  });
+});
+
+describe('inflation-adjusted withdrawals', () => {
+  test('given_inflationEnabled_when_calculating_then_year2WithdrawalExceedsYear1', () => {
+    const result = calculateGoldStrategy(500000, 2010, 4, 5, { adjustForInflation: true });
+
+    const year1 = result.yearlyResults[0];
+    const year2 = result.yearlyResults[1];
+
+    // Year 1 withdrawal is at base rate, year 2 should be higher due to inflation
+    // Year 1 (startYear) multiplier = 1.0, Year 2 should be > 1.0
+    expect(year2.withdrawalGross).toBeGreaterThan(year1.withdrawalGross);
+  });
+
+  test('given_inflationEnabled_when_calculating_then_withdrawalsGrowWithCpi', () => {
+    const result = calculateGoldStrategy(500000, 2010, 4, 5, { adjustForInflation: true });
+
+    // Each subsequent year's withdrawal should be >= previous (CPI always >= 0 in this range)
+    for (let i = 1; i < result.yearlyResults.length; i++) {
+      const prev = result.yearlyResults[i - 1];
+      const curr = result.yearlyResults[i];
+      if (curr.status === 'active' && prev.status === 'active') {
+        expect(curr.withdrawalGross).toBeGreaterThanOrEqual(prev.withdrawalGross);
+      }
+    }
+  });
+
+  test('given_inflationEnabled_when_calculating_then_depletionHappensSoonerThanFlat', () => {
+    // With inflation, withdrawals grow, so funds deplete sooner
+    const inflationResult = calculateGoldStrategy(50000, 2000, 8, 26, { adjustForInflation: true });
+    const flatResult = calculateGoldStrategy(50000, 2000, 8, 26, { adjustForInflation: false });
+
+    const inflationDepletedYear = inflationResult.yearlyResults.find(r => r.status === 'depleted');
+    const flatDepletedYear = flatResult.yearlyResults.find(r => r.status === 'depleted');
+
+    // Both should deplete, but inflation should deplete sooner (or same year)
+    if (inflationDepletedYear && flatDepletedYear) {
+      expect(inflationDepletedYear.year).toBeLessThanOrEqual(flatDepletedYear.year);
+    }
+  });
+
+  test('given_inflationDisabled_when_calculating_then_withdrawalStaysFlat', () => {
+    const result = calculateGoldStrategy(500000, 2010, 4, 5, { adjustForInflation: false });
+    const baseWithdrawal = 500000 * 0.04; // £20,000
+
+    result.yearlyResults.forEach(year => {
+      if (year.status === 'active') {
+        expect(year.withdrawalGross).toBeCloseTo(baseWithdrawal, 0);
+      }
+    });
+  });
+
+  test('given_inflationEnabledByDefault_when_noConfigProvided_then_withdrawalsGrow', () => {
+    // Default config has adjustForInflation: true
+    const result = calculateGoldStrategy(500000, 2010, 4, 5);
+
+    const year1 = result.yearlyResults[0];
+    const year5 = result.yearlyResults[4];
+
+    // Over 5 years, inflation should increase the withdrawal
+    if (year5.status === 'active') {
+      expect(year5.withdrawalGross).toBeGreaterThan(year1.withdrawalGross);
+    }
+  });
+
+  test('given_inflationEnabled_when_summarizing_then_fullWithdrawalYearsCountsAllActive', () => {
+    const result = calculateGoldStrategy(500000, 2010, 4, 5, { adjustForInflation: true });
+
+    // With the Phase 2 fix, fullWithdrawalYears just counts 'active' status years
+    const expectedFullYears = result.yearlyResults.filter(r => r.status === 'active').length;
+    expect(result.summary.fullWithdrawalYears).toBe(expectedFullYears);
   });
 });
 

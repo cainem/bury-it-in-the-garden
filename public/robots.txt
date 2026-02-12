@@ -1,0 +1,9 @@
+# robots.txt for bury-it-in-the-garden
+# Note: On GitHub Pages project sites, robots.txt is served at
+# /bury-it-in-the-garden/robots.txt rather than the domain root.
+# Submit sitemap directly via Google Search Console for best results.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://cainem.github.io/bury-it-in-the-garden/sitemap.xml

@@ -8,10 +8,11 @@
  *
  * Key historical changes:
  * - 1979: Top rate reduced from 83% to 60%
+ * - 1986: Basic rate reduced from 30% to 29%
+ * - 1987: Basic rate reduced from 29% to 27%
  * - 1988: Basic rate reduced from 27% to 25%, higher rate reduced from 60% to 40%
- * - 1992: Basic rate reduced from 25% to 24%
- * - 1995: Basic rate reduced from 25% to 24%
- * - 1996: Basic rate reduced from 24% to 23%
+ * - 1996: Basic rate reduced from 25% to 24%
+ * - 1997: Basic rate reduced from 24% to 23%
  * - 1999: Basic rate reduced from 23% to 22%
  * - 2008: Basic rate reduced from 22% to 20%
  * - 2010: Additional rate (50%) introduced for income over £150,000
@@ -23,6 +24,9 @@
 
 export const ukTaxData = {
   // 1980s
+  // Note: 1980-1987 uses a flat 60% higher rate as a simplification.
+  // In reality, there were multiple higher-rate bands (40%, 45%, 50%, 55%, 60%)
+  // but the 60% top rate is used here for modelling purposes.
   1980: {
     personalAllowance: 1375,
     basicRate: 0.30,
@@ -180,8 +184,9 @@ export const ukTaxData = {
     additionalRateThreshold: null
   },
   1997: {
+    // Basic rate reduced to 23%
     personalAllowance: 3765,
-    basicRate: 0.24,
+    basicRate: 0.23,
     basicRateLimit: 26100,
     higherRate: 0.40,
     higherRateLimit: null,
@@ -189,7 +194,6 @@ export const ukTaxData = {
     additionalRateThreshold: null
   },
   1998: {
-    // Basic rate reduced to 23%
     personalAllowance: 4045,
     basicRate: 0.23,
     basicRateLimit: 26100,
