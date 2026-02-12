@@ -14,7 +14,6 @@ import {
   calculateBacktestSummaryStats,
   calculateBacktestResults
 } from '../src/backtestApp.js';
-import { getStrategy } from '../src/calculators/strategyRegistry.js';
 import { YEAR_RANGE } from '../src/config/defaults.js';
 
 describe('Backtest Input Validation', () => {

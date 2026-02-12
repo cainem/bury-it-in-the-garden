@@ -344,9 +344,9 @@ function renderBacktestSummary(results, strategy1, strategy2, inputs) {
   const stats = calculateBacktestSummaryStats(results, strategy1, strategy2);
 
   const { totalPeriods, s1Wins, s2Wins, ties, s1Exhausted, s2Exhausted,
-          s1AvgValue, s2AvgValue, s1SuccessCount, s2SuccessCount,
-          s1Best, s1Worst, s2Best, s2Worst,
-          overallWinner, overallWinnerClass } = stats;
+    s1AvgValue, s2AvgValue, s1SuccessCount, s2SuccessCount,
+    s1Best, s1Worst, s2Best, s2Worst,
+    overallWinner, overallWinnerClass } = stats;
 
   summaryEl.innerHTML = `
     <div class="backtest-summary-banner ${overallWinnerClass}">
