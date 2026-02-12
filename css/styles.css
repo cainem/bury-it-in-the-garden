@@ -1527,3 +1527,155 @@ h3 { font-size: var(--font-size-xl); }
 .assumptions-table tbody tr:hover {
   background: var(--color-bg);
 }
+
+/* ============================================
+   Header Navigation (multi-link)
+   ============================================ */
+.header-nav {
+  display: flex;
+  gap: var(--spacing-lg);
+}
+
+/* ============================================
+   Backtest Page
+   ============================================ */
+
+/* Summary banner */
+.backtest-summary-banner {
+  text-align: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-xl);
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+}
+
+.backtest-summary-banner h3 {
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-2xl);
+}
+
+.backtest-summary-banner p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.backtest-summary-banner.backtest-winner-s1 {
+  background: var(--color-gold-light);
+  border-color: var(--color-gold);
+}
+
+.backtest-summary-banner.backtest-winner-s1 h3 {
+  color: var(--color-gold-dark);
+}
+
+.backtest-summary-banner.backtest-winner-s2 {
+  background: var(--color-sipp-light);
+  border-color: var(--color-sipp);
+}
+
+.backtest-summary-banner.backtest-winner-s2 h3 {
+  color: var(--color-sipp-dark);
+}
+
+/* Stats grid */
+.backtest-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .backtest-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.backtest-stat-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border: 2px solid var(--color-border);
+}
+
+.backtest-stat-card h4 {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid currentColor;
+}
+
+.backtest-stat-s1 {
+  border-color: var(--color-gold);
+}
+
+.backtest-stat-s1 h4 {
+  color: var(--color-gold);
+}
+
+.backtest-stat-s2 {
+  border-color: var(--color-sipp);
+}
+
+.backtest-stat-s2 h4 {
+  color: var(--color-sipp);
+}
+
+.backtest-stat-list {
+  margin: 0;
+  padding: 0;
+}
+
+.backtest-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.backtest-stat-row:last-child {
+  border-bottom: none;
+}
+
+.backtest-stat-row dt {
+  color: var(--color-text-muted);
+}
+
+.backtest-stat-row dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.backtest-ties {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Backtest table */
+.backtest-table {
+  table-layout: auto;
+}
+
+.backtest-table th,
+.backtest-table td {
+  white-space: nowrap;
+  padding: 0.75rem var(--spacing-md);
+}
+
+.backtest-winner-s1 {
+  color: var(--color-gold-dark);
+  font-weight: 600;
+}
+
+.backtest-winner-s2 {
+  color: var(--color-sipp-dark);
+  font-weight: 600;
+}
+
+/* Backtest summary section */
+.backtest-summary {
+  margin-bottom: var(--spacing-xl);
+}

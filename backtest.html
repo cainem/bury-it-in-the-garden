@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-02GSVVLPEC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-02GSVVLPEC');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Backtest UK pension withdrawal strategies across all possible starting years. Compare gold, S&P 500, Nasdaq 100, FTSE 100, and more over any period length using historical data from 1980-2026.">
+  <meta name="keywords" content="UK pension backtest, pension strategy comparison, historical pension performance, gold vs SIPP backtest, retirement backtest UK">
+  <title>Strategy Backtest | UK Pension Gold Strategy Calculator</title>
+  <link rel="canonical" href="https://cainem.github.io/bury-it-in-the-garden/backtest.html">
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Strategy Backtest | UK Pension Gold Strategy Calculator">
+  <meta property="og:description" content="Backtest UK pension strategies across all possible starting years using 45 years of historical data.">
+  <meta property="og:url" content="https://cainem.github.io/bury-it-in-the-garden/backtest.html">
+  <meta property="og:site_name" content="Bury your pension in the garden">
+  <meta property="og:locale" content="en_GB">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Strategy Backtest | UK Pension Gold Strategy Calculator">
+  <meta name="twitter:description" content="Backtest UK pension strategies across all possible starting years using 45 years of historical data.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <nav class="header-nav">
+      <a href="index.html" class="nav-link">Calculator</a>
+      <a href="about.html" class="nav-link">About</a>
+    </nav>
+    <h1>Strategy Backtest</h1>
+  </header>
+
+  <main class="main">
+    <section class="intro-section">
+      <p class="intro-text">
+        Compare two strategies across every possible starting year for a given period length.
+        See how each strategy would have performed historically.
+      </p>
+    </section>
+
+    <section class="input-section" aria-labelledby="backtest-input-heading">
+      <h2 id="backtest-input-heading" class="visually-hidden">Backtest Configuration</h2>
+      <form id="backtest-form" class="strategy-form">
+        <div class="form-row form-row--strategies">
+          <div class="form-group">
+            <label for="strategy-1">Strategy 1</label>
+            <select id="strategy-1" name="strategy1" required>
+              <!-- Populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="form-group form-group--vs">
+            <span class="vs-label">vs</span>
+          </div>
+
+          <div class="form-group">
+            <label for="strategy-2">Strategy 2</label>
+            <select id="strategy-2" name="strategy2" required>
+              <!-- Populated by JavaScript -->
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="pension-amount">Starting Pension Amount (£)</label>
+          <input
+            type="number"
+            id="pension-amount"
+            name="pensionAmount"
+            value="500000"
+            min="10000"
+            max="10000000"
+            step="1000"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="withdrawal-rate">Annual Withdrawal Rate (%)</label>
+          <input
+            type="number"
+            id="withdrawal-rate"
+            name="withdrawalRate"
+            value="5"
+            min="1"
+            max="10"
+            step="0.5"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="period-length">Period Length (Years)</label>
+          <input
+            type="number"
+            id="period-length"
+            name="periodLength"
+            value="15"
+            min="5"
+            max="30"
+            step="1"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary">Run Backtest</button>
+      </form>
+    </section>
+
+    <section class="results-section" aria-labelledby="backtest-results-heading" id="backtest-results-section">
+      <h2 id="backtest-results-heading">Backtest Results</h2>
+
+      <div id="error-message" class="error-message" role="alert" hidden></div>
+
+      <div id="backtest-summary" class="backtest-summary" hidden></div>
+
+      <div class="table-container">
+        <table class="results-table backtest-table" id="backtest-table">
+          <thead>
+            <tr>
+              <th scope="col">Start Year</th>
+              <th scope="col">End Year</th>
+              <th scope="col" id="strategy1-header">Strategy 1</th>
+              <th scope="col" id="strategy2-header">Strategy 2</th>
+              <th scope="col">Winner</th>
+            </tr>
+          </thead>
+          <tbody id="backtest-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>
+      <a href="index.html">← Back to Calculator</a>
+    </p>
+    <div class="cookie-notice">
+      <p>This site uses Google Analytics to help me understand how users interact with the tool. Some cookies are used for this purpose. By using the site, you acknowledge this usage.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="./src/backtestMain.js"></script>
+</body>
+</html>
