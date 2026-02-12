@@ -127,7 +127,7 @@ Run `npm run test:coverage` for detailed coverage report.
 
 ## Disclaimer
 
-This tool is for **educational purposes only**. It does not constitute financial advice. Past performance does not guarantee future results. 
+This tool is for **educational purposes only**. It does not constitute financial advice. Past performance does not guarantee future results.
 
 Key assumptions:
 - Pre-2015 comparisons are illustrative only (pension freedom rules didn't exist before April 2015)
